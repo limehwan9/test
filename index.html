@@ -1,120 +1,86 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="ko">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.4">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+    <meta charset="UTF-8">
+    <title>TM to Micro:bit</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;TM to Micro:bit UART&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"&gt;&lt;/script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"&gt;&lt;/script&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;h2&gt;티쳐블 머신 - 마이크로비트 연결기&lt;/h2&gt;</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;input type="text" id="model-url" placeholder="티쳐블 머신 공유 URL 입력" style="width:300px;"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;button onclick="init()"&gt;모델 로드 및 캠 시작&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;hr&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;button onclick="connectBT()" style="background-color: #4CAF50; color: white; padding: 10px;"&gt;마이크로비트 블루투스 연결&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;p id="status"&gt;상태: 대기 중...&lt;/p&gt;</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="webcam-container"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="label-container" style="font-size: 24px; font-weight: bold; color: blue;"&gt;&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let model, webcam, labelContainer, maxPredictions;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let bluetoothDevice, uartCharacteristic;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// --- 블루투스 관련 함수 ---</p>
-<p class="p1"><span class="Apple-converted-space">        </span>async function connectBT() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // 마이크로비트가 받는 쪽(RX)</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const device = await navigator.bluetooth.requestDevice({</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>filters: [{ namePrefix: 'BBC micro:bit' }],</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>optionalServices: [UART_SERVICE_UUID]</p>
-<p class="p1"><span class="Apple-converted-space">                </span>});</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const server = await device.gatt.connect();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const service = await server.getPrimaryService(UART_SERVICE_UUID);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>uartCharacteristic = await service.getCharacteristic(UART_TX_CHARACTERISTIC_UUID);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>document.getElementById('status').innerText = "상태: 마이크로비트 연결 성공!";</p>
-<p class="p1"><span class="Apple-converted-space">            </span>} catch (error) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>console.log(error);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>alert("연결 실패: " + error);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// --- 티쳐블 머신 관련 함수 ---</p>
-<p class="p1"><span class="Apple-converted-space">        </span>async function init() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const URL = document.getElementById('model-url').value;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const modelURL = URL + "model.json";</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const metadataURL = URL + "metadata.json";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>model = await tmImage.load(modelURL, metadataURL);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>maxPredictions = model.getTotalClasses();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>webcam = new tmImage.Webcam(200, 200, true);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>await webcam.setup();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>await webcam.play();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>window.requestAnimationFrame(loop);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById("webcam-container").appendChild(webcam.canvas);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>labelContainer = document.getElementById("label-container");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>async function loop() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>webcam.update();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>await predict();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>window.requestAnimationFrame(loop);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>let lastSentClass = ""; // 중복 전송 방지</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>async function predict() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const prediction = await model.predict(webcam.canvas);</p>
-<p class="p2"><span class="Apple-converted-space">            </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>// 가장 확률이 높은 클래스 찾기</p>
-<p class="p1"><span class="Apple-converted-space">            </span>let highestProb = 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>let bestClass = "";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>for (let i = 0; i &lt; maxPredictions; i++) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (prediction[i].probability &gt; highestProb) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>highestProb = prediction[i].probability;</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>bestClass = prediction[i].className;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>labelContainer.innerText = "인식 결과: " + bestClass;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>// 확률이 90% 이상이고, 이전과 다른 클래스일 때만 블루투스 전송</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (highestProb &gt; 0.90 &amp;&amp; bestClass !== lastSentClass) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>sendToMicrobit(bestClass);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>lastSentClass = bestClass;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function sendToMicrobit(message) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (uartCharacteristic) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const encoder = new TextEncoder();</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const data = encoder.encode(message + "\n");</p>
-<p class="p1"><span class="Apple-converted-space">                </span>uartCharacteristic.writeValue(data);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>console.log("전송 완료: " + message);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+    <h2>티쳐블 머신 - 마이크로비트 연결</h2>
+    <input type="text" id="model-url" placeholder="티쳐블 머신 URL을 입력하세요" style="width:300px;">
+    <button onclick="init()">모델 로드 및 캠 시작</button>
+    <hr>
+    <button onclick="connectBT()" style="background-color: #4CAF50; color: white; padding: 10px; cursor: pointer;">마이크로비트 블루투스 연결</button>
+    <p id="status">상태: 대기 중...</p>
+    <div id="webcam-container"></div>
+    <div id="label-container" style="font-size: 24px; font-weight: bold; color: blue; margin-top: 10px;"></div>
+
+    <script>
+        let model, webcam, labelContainer, maxPredictions;
+        let uartCharacteristic;
+
+        async function connectBT() {
+            const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+            const UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'BBC micro:bit' }],
+                    optionalServices: [UART_SERVICE_UUID]
+                });
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(UART_SERVICE_UUID);
+                uartCharacteristic = await service.getCharacteristic(UART_TX_CHARACTERISTIC_UUID);
+                document.getElementById('status').innerText = "상태: 연결 성공!";
+            } catch (error) {
+                alert("연결 오류: " + error);
+            }
+        }
+
+        async function init() {
+            const URL = document.getElementById('model-url').value;
+            if(!URL) return alert("URL을 입력해주세요.");
+            try {
+                model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+                maxPredictions = model.getTotalClasses();
+                webcam = new tmImage.Webcam(200, 200, true);
+                await webcam.setup();
+                await webcam.play();
+                window.requestAnimationFrame(loop);
+                document.getElementById("webcam-container").innerHTML = "";
+                document.getElementById("webcam-container").appendChild(webcam.canvas);
+                labelContainer = document.getElementById("label-container");
+            } catch (e) {
+                alert("모델 로드 실패. URL을 확인하세요.");
+            }
+        }
+
+        async function loop() {
+            webcam.update();
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        let lastSentClass = "";
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            let highestProb = 0;
+            let bestClass = "";
+            for (let i = 0; i < maxPredictions; i++) {
+                if (prediction[i].probability > highestProb) {
+                    highestProb = prediction[i].probability;
+                    bestClass = prediction[i].className;
+                }
+            }
+            labelContainer.innerText = "결과: " + bestClass;
+            if (highestProb > 0.90 && bestClass !== lastSentClass) {
+                if (uartCharacteristic) {
+                    const data = new TextEncoder().encode(bestClass + "\n");
+                    uartCharacteristic.writeValue(data);
+                }
+                lastSentClass = bestClass;
+            }
+        }
+    </script>
 </body>
 </html>
